@@ -10,6 +10,9 @@ import android.support.annotation.RequiresPermission;
 import android.support.v4.content.FileProvider;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 import static android.Manifest.permission.CALL_PHONE;
 
@@ -83,83 +86,6 @@ public final class IntentUtils {
         } else {
             intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             String authority = Utils.getApp().getPackageName() + ".utilcode.provider";
-            data = FileProvider.getUriForFile(Utils.getApp(), authority, file);
-        }
-        intent.setDataAndType(data, type);
-        return getIntent(intent, isNewTask);
-    }
-
-    /**
-     * Return the intent of install app.
-     * <p>Target APIs greater than 25 must hold
-     * {@code <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />}</p>
-     *
-     * @param filePath  The path of file.
-     * @param authority Target APIs greater than 23 must hold the authority of a FileProvider
-     *                  defined in a {@code <provider>} element in your app's manifest.
-     * @return the intent of install app
-     */
-    @Deprecated
-    public static Intent getInstallAppIntent(final String filePath, final String authority) {
-        return getInstallAppIntent(getFileByPath(filePath), authority, false);
-    }
-
-    /**
-     * Return the intent of install app.
-     * <p>Target APIs greater than 25 must hold
-     * {@code <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />}</p>
-     *
-     * @param file      The file.
-     * @param authority Target APIs greater than 23 must hold the authority of a FileProvider
-     *                  defined in a {@code <provider>} element in your app's manifest.
-     * @return the intent of install app
-     */
-    @Deprecated
-    public static Intent getInstallAppIntent(final File file, final String authority) {
-        return getInstallAppIntent(file, authority, false);
-    }
-
-    /**
-     * Return the intent of install app.
-     * <p>Target APIs greater than 25 must hold
-     * {@code <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />}</p>
-     *
-     * @param filePath  The path of file.
-     * @param authority Target APIs greater than 23 must hold the authority of a FileProvider
-     *                  defined in a {@code <provider>} element in your app's manifest.
-     * @param isNewTask True to add flag of new task, false otherwise.
-     * @return the intent of install app
-     */
-    @Deprecated
-    public static Intent getInstallAppIntent(final String filePath,
-                                             final String authority,
-                                             final boolean isNewTask) {
-        return getInstallAppIntent(getFileByPath(filePath), authority, isNewTask);
-    }
-
-    /**
-     * Return the intent of install app.
-     * <p>Target APIs greater than 25 must hold
-     * {@code <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />}</p>
-     *
-     * @param file      The file.
-     * @param authority Target APIs greater than 23 must hold the authority of a FileProvider
-     *                  defined in a {@code <provider>} element in your app's manifest.
-     * @param isNewTask True to add flag of new task, false otherwise.
-     * @return the intent of install app
-     */
-    @Deprecated
-    public static Intent getInstallAppIntent(final File file,
-                                             final String authority,
-                                             final boolean isNewTask) {
-        if (file == null) return null;
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        Uri data;
-        String type = "application/vnd.android.package-archive";
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            data = Uri.fromFile(file);
-        } else {
-            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             data = FileProvider.getUriForFile(Utils.getApp(), authority, file);
         }
         intent.setDataAndType(data, type);
@@ -309,8 +235,8 @@ public final class IntentUtils {
     public static Intent getShareImageIntent(final String content,
                                              final File image,
                                              final boolean isNewTask) {
-        if (image != null && image.isFile()) return null;
-        return getShareImageIntent(content, Uri.fromFile(image), isNewTask);
+        if (image == null || !image.isFile()) return null;
+        return getShareImageIntent(content, file2Uri(image), isNewTask);
     }
 
     /**
@@ -338,6 +264,96 @@ public final class IntentUtils {
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.putExtra(Intent.EXTRA_TEXT, content);
         intent.putExtra(Intent.EXTRA_STREAM, uri);
+        intent.setType("image/*");
+        return getIntent(intent, isNewTask);
+    }
+
+    /**
+     * Return the intent of share images.
+     *
+     * @param content    The content.
+     * @param imagePaths The paths of images.
+     * @return the intent of share images
+     */
+    public static Intent getShareImageIntent(final String content, final LinkedList<String> imagePaths) {
+        return getShareImageIntent(content, imagePaths, false);
+    }
+
+    /**
+     * Return the intent of share images.
+     *
+     * @param content    The content.
+     * @param imagePaths The paths of images.
+     * @param isNewTask  True to add flag of new task, false otherwise.
+     * @return the intent of share images
+     */
+    public static Intent getShareImageIntent(final String content,
+                                             final LinkedList<String> imagePaths,
+                                             final boolean isNewTask) {
+        if (imagePaths == null || imagePaths.isEmpty()) return null;
+        List<File> files = new ArrayList<>();
+        for (String imagePath : imagePaths) {
+            files.add(new File(imagePath));
+        }
+        return getShareImageIntent(content, files, isNewTask);
+    }
+
+    /**
+     * Return the intent of share images.
+     *
+     * @param content The content.
+     * @param images  The files of images.
+     * @return the intent of share images
+     */
+    public static Intent getShareImageIntent(final String content, final List<File> images) {
+        return getShareImageIntent(content, images, false);
+    }
+
+    /**
+     * Return the intent of share images.
+     *
+     * @param content   The content.
+     * @param images    The files of images.
+     * @param isNewTask True to add flag of new task, false otherwise.
+     * @return the intent of share images
+     */
+    public static Intent getShareImageIntent(final String content,
+                                             final List<File> images,
+                                             final boolean isNewTask) {
+        if (images == null || images.isEmpty()) return null;
+        ArrayList<Uri> uris = new ArrayList<>();
+        for (File image : images) {
+            if (!image.isFile()) continue;
+            uris.add(file2Uri(image));
+        }
+        return getShareImageIntent(content, uris, isNewTask);
+    }
+
+    /**
+     * Return the intent of share images.
+     *
+     * @param content The content.
+     * @param uris    The uris of images.
+     * @return the intent of share images
+     */
+    public static Intent getShareImageIntent(final String content, final ArrayList<Uri> uris) {
+        return getShareImageIntent(content, uris, false);
+    }
+
+    /**
+     * Return the intent of share images.
+     *
+     * @param content   The content.
+     * @param uris      The uris of image.
+     * @param isNewTask True to add flag of new task, false otherwise.
+     * @return the intent of share image
+     */
+    public static Intent getShareImageIntent(final String content,
+                                             final ArrayList<Uri> uris,
+                                             final boolean isNewTask) {
+        Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+        intent.putExtra(Intent.EXTRA_TEXT, content);
+        intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
         intent.setType("image/*");
         return getIntent(intent, isNewTask);
     }
@@ -534,6 +550,10 @@ public final class IntentUtils {
         return isNewTask ? intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) : intent;
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    // other utils methods
+    ///////////////////////////////////////////////////////////////////////////
+
     private static File getFileByPath(final String filePath) {
         return isSpace(filePath) ? null : new File(filePath);
     }
@@ -546,6 +566,16 @@ public final class IntentUtils {
             }
         }
         return true;
+    }
+
+    private static Uri file2Uri(final File file) {
+        if (file == null) return null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            String authority = Utils.getApp().getPackageName() + ".utilcode.provider";
+            return FileProvider.getUriForFile(Utils.getApp(), authority, file);
+        } else {
+            return Uri.fromFile(file);
+        }
     }
 
 //    /**

@@ -1,3 +1,15 @@
+* 18/08/01 删除标记废弃的 CacheUtils, AppUtils#installApp, TimeUtils#getWeekIndex，发布 1.18.0
+* 18/07/30 替换 ScreenUtils#adaptPortraitScreen 和 ScreenUtils#adaptLandscapeScreen，为 ScreenUtils#adaptScreen4VerticalSlide 和 ScreenUtils#adaptScreen4HorizontalSlide
+* 18/07/28 修复 NetworkUtils#getIPAddress
+* 18/07/16 新增 ScreenUtils#adaptPortraitScreen 和 ScreenUtils#adaptLandscapeScreen，发布 1.17.3
+* 18/07/13 修复 IntentUtils 分享图片判断逻辑，CacheDiskUtils 可放入 byte[0]
+* 18/06/29 修复 FragmentUtils 中 getFragmentManager 空指针错误，发布 1.17.2
+* 18/06/27 新增 UriUtils#uri2File
+* 18/06/25 新增 KeyboardUtils#fixAndroidBug5497，发布 1.17.1 版本
+* 18/06/21 修复 FragmentUtils#add 死循环的 BUG
+* 18/06/14 替换 CacheUtils 为 CacheDiskUtils，CacheUtils 标记 deprecated，发布 1.17.0 版本
+* 18/06/13 新增 CacheMemoryUtils 和 CacheDoubleUtils
+* 18/06/12 完善 FragmentUtils#add 和 replace 新增 tag
 * 18/05/30 完善 DeviceUtils#getMacAddress，发布 1.16.4 版本
 * 18/05/30 修复 ToastUtils 在 targetSdkVersion 为 27 在 api 25 机器快速 show 两次崩溃的异常，发布 1.16.3 版本
 * 18/05/29 完善 TimeUtils 的 timeSpan 带符号位，ToastUtils 去除弱引用，发布 1.16.2 版本

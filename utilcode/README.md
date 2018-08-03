@@ -2,7 +2,7 @@
 
 Gradle:
 ```groovy
-implementation 'com.blankj:utilcode:1.16.4'
+implementation 'com.blankj:utilcode:1.18.0'
 ```
 
 
@@ -90,7 +90,7 @@ getNavBarColor
 isNavBarVisible
 ```
 
-* ### About Cache -> [CacheUtils.java][cache.java] -> [Test][cache.test]
+* ### About CacheDisk -> [CacheDiskUtils.java][cache_disk.java] -> [Test][cache_disk.test]
 ```
 getInstance
 Instance.put
@@ -103,6 +103,35 @@ Instance.getDrawable
 Instance.getParcelable
 Instance.getSerializable
 Instance.getCacheSize
+Instance.getCacheCount
+Instance.remove
+Instance.clear
+```
+
+* ### About CacheDouble -> [CacheDoubleUtils.java][cache_double.java] -> [Test][cache_double.test]
+```
+getInstance
+Instance.put
+Instance.getBytes
+Instance.getString
+Instance.getJSONObject
+Instance.getJSONArray
+Instance.getBitmap
+Instance.getDrawable
+Instance.getParcelable
+Instance.getSerializable
+Instance.getCacheDiskSize
+Instance.getCacheDiskCount
+Instance.getCacheMemoryCount
+Instance.remove
+Instance.clear
+```
+
+* ### About CacheMemory -> [CacheMemoryUtils.java][cache_memory.java] -> [Test][cache_memory.test]
+```
+getInstance
+Instance.put
+Instance.get
 Instance.getCacheCount
 Instance.remove
 Instance.clear
@@ -337,6 +366,7 @@ toggleSoftInput
 isSoftInputVisible
 registerSoftInputChangedListener
 unregisterSoftInputChangedListener
+fixAndroidBug5497
 fixSoftInputLeaks
 clickBlankArea2HideSoftInput
 ```
@@ -392,6 +422,10 @@ getNetworkOperatorName
 getNetworkType
 getIPAddress
 getDomainAddress
+getIpAddressByWifi
+getGatewayByWifi
+getNetMaskByWifi
+getServerAddressByWifi
 ```
 
 * ### About Object -> [ObjectUtils.java][object.java] -> [Test][object.test]
@@ -420,6 +454,7 @@ request
 ```
 isPhone
 getDeviceId
+getSerial
 getIMEI
 getMEID
 getIMSI
@@ -489,6 +524,9 @@ getScreenHeight
 getScreenDensity
 getScreenDensityDpi
 setFullScreen
+setNonFullScreen
+toggleFullScreen
+isFullScreen
 setLandscape
 setPortrait
 isLandscape
@@ -499,6 +537,9 @@ isScreenLock
 setSleepDuration
 getSleepDuration
 isTablet
+adaptScreen4VerticalSlide
+adaptScreen4HorizontalSlide
+cancelAdaptScreen
 ```
 
 * ### About SDCard -> [SDCardUtils.java][sdcard.java] -> [Demo][sdcard.demo]
@@ -563,7 +604,6 @@ setLineHeight
 setQuoteColor
 setLeadingMargin
 setBullet
-setIconMargin
 setFontSize
 setFontProportion
 setFontXProportion
@@ -697,7 +737,8 @@ cancel
 
 * ### About Uri -> [UriUtils.java][uri.java]
 ```
-getUriForFile
+file2Uri
+uri2File
 ```
 
 * ### About Zip -> [ZipUtils.java][zip.java] -> [Test][zip.test]
@@ -721,8 +762,14 @@ getComments
 [bar.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/utilcode/src/main/java/com/blankj/utilcode/util/BarUtils.java
 [bar.demo]: https://github.com/Blankj/AndroidUtilCode/blob/master/app/src/main/java/com/blankj/androidutilcode/feature/core/bar/BarActivity.java
 
-[cache.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/utilcode/src/main/java/com/blankj/utilcode/util/CacheUtils.java
-[cache.test]: https://github.com/Blankj/AndroidUtilCode/blob/master/utilcode/src/test/java/com/blankj/utilcode/util/CacheUtilsTest.java
+[cache_disk.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/utilcode/src/main/java/com/blankj/utilcode/util/CacheDiskUtils.java
+[cache_disk.test]: https://github.com/Blankj/AndroidUtilCode/blob/master/utilcode/src/test/java/com/blankj/utilcode/util/CacheDiskUtilsTest.java
+
+[cache_double.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/utilcode/src/main/java/com/blankj/utilcode/util/CacheDoubleUtils.java
+[cache_double.test]: https://github.com/Blankj/AndroidUtilCode/blob/master/utilcode/src/test/java/com/blankj/utilcode/util/CacheDoubleUtilsTest.java
+
+[cache_memory.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/utilcode/src/main/java/com/blankj/utilcode/util/CacheMemoryUtils.java
+[cache_memory.test]: https://github.com/Blankj/AndroidUtilCode/blob/master/utilcode/src/test/java/com/blankj/utilcode/util/CacheMemoryUtilsTest.java
 
 [clean.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/utilcode/src/main/java/com/blankj/utilcode/util/CleanUtils.java
 [clean.demo]: https://github.com/Blankj/AndroidUtilCode/blob/master/app/src/main/java/com/blankj/androidutilcode/feature/core/clean/CleanActivity.java

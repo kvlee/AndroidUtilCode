@@ -8,22 +8,25 @@ import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.support.annotation.RequiresPermission;
 import android.telephony.TelephonyManager;
+import android.text.format.Formatter;
 import android.util.Log;
-
-import com.blankj.utilcode.util.ShellUtils.CommandResult;
 
 import java.lang.reflect.Method;
 import java.net.InetAddress;
+import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
+import java.util.LinkedList;
+import java.util.List;
 
 import static android.Manifest.permission.ACCESS_NETWORK_STATE;
 import static android.Manifest.permission.ACCESS_WIFI_STATE;
 import static android.Manifest.permission.CHANGE_WIFI_STATE;
 import static android.Manifest.permission.INTERNET;
 import static android.Manifest.permission.MODIFY_PHONE_STATE;
+import static android.content.Context.WIFI_SERVICE;
 
 /**
  * <pre>
@@ -40,6 +43,7 @@ public final class NetworkUtils {
     }
 
     public enum NetworkType {
+        NETWORK_ETHERNET,
         NETWORK_WIFI,
         NETWORK_4G,
         NETWORK_3G,
@@ -95,7 +99,7 @@ public final class NetworkUtils {
         if (ip == null || ip.length() <= 0) {
             ip = "223.5.5.5";// default ping ip
         }
-        CommandResult result = ShellUtils.execCmd(String.format("ping -c 1 %s", ip), false);
+        ShellUtils.CommandResult result = ShellUtils.execCmd(String.format("ping -c 1 %s", ip), false);
         boolean ret = result.result == 0;
         if (result.errorMsg != null) {
             Log.d("NetworkUtils", "isAvailableByPing() called" + result.errorMsg);
@@ -190,7 +194,7 @@ public final class NetworkUtils {
     @RequiresPermission(ACCESS_WIFI_STATE)
     public static boolean getWifiEnabled() {
         @SuppressLint("WifiManagerLeak")
-        WifiManager manager = (WifiManager) Utils.getApp().getSystemService(Context.WIFI_SERVICE);
+        WifiManager manager = (WifiManager) Utils.getApp().getSystemService(WIFI_SERVICE);
         return manager != null && manager.isWifiEnabled();
     }
 
@@ -204,17 +208,9 @@ public final class NetworkUtils {
     @RequiresPermission(CHANGE_WIFI_STATE)
     public static void setWifiEnabled(final boolean enabled) {
         @SuppressLint("WifiManagerLeak")
-        WifiManager manager = (WifiManager) Utils.getApp().getSystemService(Context.WIFI_SERVICE);
-        if (manager == null) return;
-        if (enabled) {
-            if (!manager.isWifiEnabled()) {
-                manager.setWifiEnabled(true);
-            }
-        } else {
-            if (manager.isWifiEnabled()) {
-                manager.setWifiEnabled(false);
-            }
-        }
+        WifiManager manager = (WifiManager) Utils.getApp().getSystemService(WIFI_SERVICE);
+        if (manager == null || enabled == manager.isWifiEnabled()) return;
+        manager.setWifiEnabled(enabled);
     }
 
     /**
@@ -257,10 +253,6 @@ public final class NetworkUtils {
         return tm != null ? tm.getNetworkOperatorName() : "";
     }
 
-    private static final int NETWORK_TYPE_GSM      = 16;
-    private static final int NETWORK_TYPE_TD_SCDMA = 17;
-    private static final int NETWORK_TYPE_IWLAN    = 18;
-
     /**
      * Return type of network.
      * <p>Must hold
@@ -268,12 +260,13 @@ public final class NetworkUtils {
      *
      * @return type of network
      * <ul>
-     * <li>{@link NetworkUtils.NetworkType#NETWORK_WIFI   } </li>
-     * <li>{@link NetworkUtils.NetworkType#NETWORK_4G     } </li>
-     * <li>{@link NetworkUtils.NetworkType#NETWORK_3G     } </li>
-     * <li>{@link NetworkUtils.NetworkType#NETWORK_2G     } </li>
-     * <li>{@link NetworkUtils.NetworkType#NETWORK_UNKNOWN} </li>
-     * <li>{@link NetworkUtils.NetworkType#NETWORK_NO     } </li>
+     * <li>{@link NetworkUtils.NetworkType#NETWORK_ETHERNET} </li>
+     * <li>{@link NetworkUtils.NetworkType#NETWORK_WIFI    } </li>
+     * <li>{@link NetworkUtils.NetworkType#NETWORK_4G      } </li>
+     * <li>{@link NetworkUtils.NetworkType#NETWORK_3G      } </li>
+     * <li>{@link NetworkUtils.NetworkType#NETWORK_2G      } </li>
+     * <li>{@link NetworkUtils.NetworkType#NETWORK_UNKNOWN } </li>
+     * <li>{@link NetworkUtils.NetworkType#NETWORK_NO      } </li>
      * </ul>
      */
     @RequiresPermission(ACCESS_NETWORK_STATE)
@@ -281,13 +274,14 @@ public final class NetworkUtils {
         NetworkType netType = NetworkType.NETWORK_NO;
         NetworkInfo info = getActiveNetworkInfo();
         if (info != null && info.isAvailable()) {
-
-            if (info.getType() == ConnectivityManager.TYPE_WIFI) {
+            if (info.getType() == ConnectivityManager.TYPE_ETHERNET) {
+                netType = NetworkType.NETWORK_ETHERNET;
+            } else if (info.getType() == ConnectivityManager.TYPE_WIFI) {
                 netType = NetworkType.NETWORK_WIFI;
             } else if (info.getType() == ConnectivityManager.TYPE_MOBILE) {
                 switch (info.getSubtype()) {
 
-                    case NETWORK_TYPE_GSM:
+                    case TelephonyManager.NETWORK_TYPE_GSM:
                     case TelephonyManager.NETWORK_TYPE_GPRS:
                     case TelephonyManager.NETWORK_TYPE_CDMA:
                     case TelephonyManager.NETWORK_TYPE_EDGE:
@@ -296,7 +290,7 @@ public final class NetworkUtils {
                         netType = NetworkType.NETWORK_2G;
                         break;
 
-                    case NETWORK_TYPE_TD_SCDMA:
+                    case TelephonyManager.NETWORK_TYPE_TD_SCDMA:
                     case TelephonyManager.NETWORK_TYPE_EVDO_A:
                     case TelephonyManager.NETWORK_TYPE_UMTS:
                     case TelephonyManager.NETWORK_TYPE_EVDO_0:
@@ -309,7 +303,7 @@ public final class NetworkUtils {
                         netType = NetworkType.NETWORK_3G;
                         break;
 
-                    case NETWORK_TYPE_IWLAN:
+                    case TelephonyManager.NETWORK_TYPE_IWLAN:
                     case TelephonyManager.NETWORK_TYPE_LTE:
                         netType = NetworkType.NETWORK_4G;
                         break;
@@ -351,26 +345,56 @@ public final class NetworkUtils {
     public static String getIPAddress(final boolean useIPv4) {
         try {
             Enumeration<NetworkInterface> nis = NetworkInterface.getNetworkInterfaces();
+            LinkedList<InetAddress> adds = new LinkedList<>();
             while (nis.hasMoreElements()) {
                 NetworkInterface ni = nis.nextElement();
                 // To prevent phone of xiaomi return "10.0.2.15"
-                if (!ni.isUp()) continue;
+                if (!ni.isUp() || ni.isLoopback()) continue;
                 Enumeration<InetAddress> addresses = ni.getInetAddresses();
                 while (addresses.hasMoreElements()) {
-                    InetAddress inetAddress = addresses.nextElement();
-                    if (!inetAddress.isLoopbackAddress()) {
-                        String hostAddress = inetAddress.getHostAddress();
-                        boolean isIPv4 = hostAddress.indexOf(':') < 0;
-                        if (useIPv4) {
-                            if (isIPv4) return hostAddress;
-                        } else {
-                            if (!isIPv4) {
-                                int index = hostAddress.indexOf('%');
-                                return index < 0
-                                        ? hostAddress.toUpperCase()
-                                        : hostAddress.substring(0, index).toUpperCase();
-                            }
+                    adds.addFirst(addresses.nextElement());
+                }
+            }
+            for (InetAddress add : adds) {
+                if (!add.isLoopbackAddress()) {
+                    String hostAddress = add.getHostAddress();
+                    boolean isIPv4 = hostAddress.indexOf(':') < 0;
+                    if (useIPv4) {
+                        if (isIPv4) return hostAddress;
+                    } else {
+                        if (!isIPv4) {
+                            int index = hostAddress.indexOf('%');
+                            return index < 0
+                                    ? hostAddress.toUpperCase()
+                                    : hostAddress.substring(0, index).toUpperCase();
                         }
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    /**
+     * Return the ip address of broadcast.
+     *
+     * @return the ip address of broadcast
+     */
+    public static String getBroadcastIpAddress() {
+        try {
+            Enumeration<NetworkInterface> nis = NetworkInterface.getNetworkInterfaces();
+            LinkedList<InetAddress> adds = new LinkedList<>();
+            while (nis.hasMoreElements()) {
+                NetworkInterface ni = nis.nextElement();
+                if (!ni.isUp() || ni.isLoopback()) continue;
+                List<InterfaceAddress> ias = ni.getInterfaceAddresses();
+                for (int i = 0; i < ias.size(); i++) {
+                    InterfaceAddress ia = ias.get(i);
+                    InetAddress broadcast = ia.getBroadcast();
+                    if (broadcast != null) {
+                        return broadcast.getHostAddress();
                     }
                 }
             }
@@ -397,5 +421,57 @@ public final class NetworkUtils {
             e.printStackTrace();
             return "";
         }
+    }
+
+    /**
+     * Return the ip address by wifi.
+     *
+     * @return the ip address by wifi
+     */
+    @RequiresPermission(ACCESS_WIFI_STATE)
+    public static String getIpAddressByWifi() {
+        @SuppressLint("WifiManagerLeak")
+        WifiManager wm = (WifiManager) Utils.getApp().getSystemService(Context.WIFI_SERVICE);
+        if (wm == null) return "";
+        return Formatter.formatIpAddress(wm.getDhcpInfo().ipAddress);
+    }
+
+    /**
+     * Return the gate way by wifi.
+     *
+     * @return the gate way by wifi
+     */
+    @RequiresPermission(ACCESS_WIFI_STATE)
+    public static String getGatewayByWifi() {
+        @SuppressLint("WifiManagerLeak")
+        WifiManager wm = (WifiManager) Utils.getApp().getSystemService(Context.WIFI_SERVICE);
+        if (wm == null) return "";
+        return Formatter.formatIpAddress(wm.getDhcpInfo().gateway);
+    }
+
+    /**
+     * Return the net mask by wifi.
+     *
+     * @return the net mask by wifi
+     */
+    @RequiresPermission(ACCESS_WIFI_STATE)
+    public static String getNetMaskByWifi() {
+        @SuppressLint("WifiManagerLeak")
+        WifiManager wm = (WifiManager) Utils.getApp().getSystemService(Context.WIFI_SERVICE);
+        if (wm == null) return "";
+        return Formatter.formatIpAddress(wm.getDhcpInfo().netmask);
+    }
+
+    /**
+     * Return the server address by wifi.
+     *
+     * @return the server address by wifi
+     */
+    @RequiresPermission(ACCESS_WIFI_STATE)
+    public static String getServerAddressByWifi() {
+        @SuppressLint("WifiManagerLeak")
+        WifiManager wm = (WifiManager) Utils.getApp().getSystemService(Context.WIFI_SERVICE);
+        if (wm == null) return "";
+        return Formatter.formatIpAddress(wm.getDhcpInfo().serverAddress);
     }
 }

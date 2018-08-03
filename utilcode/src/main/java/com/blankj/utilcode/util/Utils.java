@@ -40,7 +40,7 @@ public final class Utils {
     @SuppressLint("StaticFieldLeak")
     private static Application sApplication;
 
-    private static final ActivityLifecycleImpl ACTIVITY_LIFECYCLE = new ActivityLifecycleImpl();
+    static final ActivityLifecycleImpl ACTIVITY_LIFECYCLE = new ActivityLifecycleImpl();
 
     private Utils() {
         throw new UnsupportedOperationException("u can't instantiate me...");
@@ -169,9 +169,7 @@ public final class Utils {
         }
 
         @Override
-        public void onActivityPaused(Activity activity) {
-
-        }
+        public void onActivityPaused(Activity activity) {/**/}
 
         @Override
         public void onActivityStopped(Activity activity) {
@@ -186,9 +184,7 @@ public final class Utils {
         }
 
         @Override
-        public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
-
-        }
+        public void onActivitySaveInstanceState(Activity activity, Bundle outState) {/**/}
 
         @Override
         public void onActivityDestroyed(Activity activity) {
@@ -208,7 +204,6 @@ public final class Utils {
         }
 
         private void setTopActivity(final Activity activity) {
-            if (activity.getClass() == PermissionUtils.PermissionActivity.class) return;
             if (mActivityList.contains(activity)) {
                 if (!mActivityList.getLast().equals(activity)) {
                     mActivityList.remove(activity);
@@ -261,6 +256,10 @@ public final class Utils {
             return null;
         }
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // interface
+    ///////////////////////////////////////////////////////////////////////////
 
     public interface OnAppStatusChangedListener {
         void onForeground();
